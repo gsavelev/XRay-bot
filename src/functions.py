@@ -3,8 +3,12 @@ import uuid
 import json
 import logging
 import random
+
+from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import Chat
+
 from config import config
-from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +34,9 @@ class XUIAPI:
             
             # Формируем URL с учетом базового пути
             base_url = config.XUI_API_URL.rstrip('/')
-            # base_path = config.XUI_BASE_PATH.strip('/')
-            # if base_path:
-            #     base_url = f"{base_url}/{base_path}"
+            base_path = config.XUI_BASE_PATH.strip('/')
+            if base_path:
+                base_url = f"{base_url}/{base_path}"
             login_url = f"{base_url}/login"
             
             logger.info(f"ℹ️  Trying login to {login_url} with user: {config.XUI_USERNAME}")
@@ -76,7 +80,7 @@ class XUIAPI:
             base_path = config.XUI_BASE_PATH.strip('/')
             if base_path:
                 base_url = f"{base_url}/{base_path}"
-            url = f"{base_url}/api/inbounds/get/{inbound_id}"
+            url = f"{base_url}/panel/api/inbounds/get/{inbound_id}"
             
             logger.info(f"ℹ️  Getting inbound data from: {url}")
             logger.debug(f"⚙️ Using cookies: {self.cookie_jar}")
@@ -113,7 +117,7 @@ class XUIAPI:
             base_path = config.XUI_BASE_PATH.strip('/')
             if base_path:
                 base_url = f"{base_url}/{base_path}"
-            url = f"{base_url}/api/inbounds/update/{inbound_id}"
+            url = f"{base_url}/panel/api/inbounds/update/{inbound_id}"
             
             logger.info(f"ℹ️  Updating inbound at: {url}")
             
@@ -159,7 +163,6 @@ class XUIAPI:
                 "totalGB": 0,
                 "expiryTime": 0,
                 "enable": True,
-                "tgId": "",
                 "subId": "",
                 "reset": 0,
                 # Добавляем настройки для Reality
@@ -185,7 +188,7 @@ class XUIAPI:
                 "settings": json.dumps(settings, indent=2),
                 "streamSettings": inbound["streamSettings"],
                 "sniffing": inbound["sniffing"],
-                "allocate": inbound["allocate"]
+                # "allocate": inbound["allocate"]
             }
             
             if await self.update_inbound(config.INBOUND_ID, update_data):
@@ -260,7 +263,7 @@ class XUIAPI:
                 "settings": json.dumps(settings, indent=2),
                 "streamSettings": inbound["streamSettings"],
                 "sniffing": inbound["sniffing"],
-                "allocate": inbound["allocate"]
+                # "allocate": inbound["allocate"]
             }
             
             if await self.update_inbound(config.INBOUND_ID, update_data):
@@ -320,7 +323,7 @@ class XUIAPI:
                 "settings": json.dumps(settings, indent=2),
                 "streamSettings": inbound["streamSettings"],
                 "sniffing": inbound["sniffing"],
-                "allocate": inbound["allocate"]
+                # "allocate": inbound["allocate"]
             }
             
             return await self.update_inbound(config.INBOUND_ID, update_data)
@@ -339,7 +342,7 @@ class XUIAPI:
             base_path = config.XUI_BASE_PATH.strip('/')
             if base_path:
                 base_url = f"{base_url}/{base_path}"
-            url = f"{base_url}/api/inbounds/getClientTraffics/{email}"
+            url = f"{base_url}/panel/api/inbounds/getClientTraffics/{email}"
             
             async with self.session.get(url) as resp:
                 if resp.status != 200:
@@ -371,7 +374,7 @@ class XUIAPI:
             base_path = config.XUI_BASE_PATH.strip('/')
             if base_path:
                 base_url = f"{base_url}/{base_path}"
-            url = f"{base_url}/api/inbounds/get/{inbound_id}"
+            url = f"{base_url}/panel/api/inbounds/get/{inbound_id}"
             
             async with self.session.get(url) as resp:
                 if resp.status != 200:
@@ -402,7 +405,7 @@ class XUIAPI:
             base_path = config.XUI_BASE_PATH.strip('/')
             if base_path:
                 base_url = f"{base_url}/{base_path}"
-            url = f"{base_url}/api/inbounds/onlines"
+            url = f"{base_url}/panel/api/inbounds/onlines"
             
             async with self.session.post(url) as resp:
                 if resp.status != 200:
@@ -487,3 +490,58 @@ def generate_vless_url(profile_data: dict) -> str:
         f"&spx={config.REALITY_SPIDER_X}"
         f"#{fragment}"
     )
+
+async def check_if_user_chat_member(user_id: int, bot: Bot) -> bool:
+    """
+    Check if user is a member of the configured chat.
+    
+    Args:
+        user_id: Telegram user ID to check
+        bot: Bot instance for API calls
+        
+    Returns:
+        bool: True if user is a member, False otherwise
+    """
+    try:
+        # Get chat member information
+        chat_member = await bot.get_chat_member(
+            chat_id=config.CHAT_ID,
+            user_id=user_id
+        )
+        
+        # Check if user is a member (member, administrator, or creator)
+        return chat_member.status in ['member', 'administrator', 'creator']
+        
+    except TelegramBadRequest as e:
+        # Handle cases where user is not found or bot lacks permissions
+        logger.warning(f"Failed to check chat membership for user {user_id}: {e}")
+        return False
+    except Exception as e:
+        # Handle any other unexpected errors
+        logger.error(f"Unexpected error checking chat membership for user {user_id}: {e}")
+        return False
+
+async def get_chat_name(bot: Bot, chat_id: int | str) -> str:
+    """
+    Retrieve the display name for a chat, given a chat ID.
+
+    This function fetches the chat information using the provided bot instance and returns an appropriate visible name
+    depending on the type of chat: for group/supergroup/channel returns the title, for private chats returns the user's
+    full name, username, or chat ID as a fallback.
+
+    Args:
+        bot (Bot): The aiogram Bot instance.
+        chat_id (int | str): The unique identifier or username of the chat.
+
+    Returns:
+        str: The chat's display name.
+    """
+    chat: Chat = await bot.get_chat(chat_id)
+    # Groups/supergroups/channels
+    if chat.title:
+        return chat.title
+    # Private chats
+    first = chat.first_name or ""
+    last = f" {chat.last_name}" if chat.last_name else ""
+    fallback = (first + last).strip()
+    return fallback or (chat.username and f"@{chat.username}") or str(chat.id)

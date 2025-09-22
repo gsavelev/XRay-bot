@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, func
 from sqlalchemy.orm import declarative_base, sessionmaker
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
@@ -14,11 +14,10 @@ class User(Base):
     full_name = Column(String)
     username = Column(String)
     registration_date = Column(DateTime, default=datetime.utcnow)
-    subscription_end = Column(DateTime)
     vless_profile_id = Column(String)
     vless_profile_data = Column(String)
+    chat_member = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
-    notified = Column(Boolean, default=False)
 
 class StaticProfile(Base):
     __tablename__ = 'static_profiles'
@@ -27,7 +26,7 @@ class StaticProfile(Base):
     vless_url = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-engine = create_engine('sqlite:///users.db', echo=False)
+engine = create_engine('sqlite:////app/data/users.db', echo=False)
 Session = sessionmaker(bind=engine)
 
 async def init_db():
@@ -38,14 +37,16 @@ async def get_user(telegram_id: int):
     with Session() as session:
         return session.query(User).filter_by(telegram_id=telegram_id).first()
 
-async def create_user(telegram_id: int, full_name: str, username: str = None, is_admin: bool = False):
+async def create_user(telegram_id: int, full_name: str, username: str = None,
+                      chat_member: bool = False,
+                      is_admin: bool = False):
     with Session() as session:
         user = User(
             telegram_id=telegram_id,
             full_name=full_name,
             username=username,
-            subscription_end=datetime.utcnow() + timedelta(days=3),
-            is_admin=is_admin
+            chat_member=chat_member,
+            is_admin=is_admin,
         )
         session.add(user)
         session.commit()
@@ -57,38 +58,17 @@ async def delete_user_profile(telegram_id: int):
         user = session.query(User).filter_by(telegram_id=telegram_id).first()
         if user:
             user.vless_profile_data = None
-            user.notified = False
             session.commit()
             logger.info(f"✅ User profile deleted: {telegram_id}")
 
-async def update_subscription(telegram_id: int, months: int):
-    """Обновляет подписку с учетом текущего состояния"""
-    with Session() as session:
-        user = session.query(User).filter_by(telegram_id=telegram_id).first()
-        if user:
-            now = datetime.utcnow()
-            # Если подписка активна, добавляем к текущей дате окончания
-            if user.subscription_end > now:
-                user.subscription_end += timedelta(days=months * 30)
-            else:
-                # Если подписка истекла, начинаем с текущей даты
-                user.subscription_end = now + timedelta(days=months * 30)
-            
-            # Сбрасываем флаг уведомления
-            user.notified = False
-            session.commit()
-            logger.info(f"✅ Subscription updated for {telegram_id}: +{months} months")
-            return True
-        return False
-
-async def get_all_users(with_subscription: bool = None):
+async def get_all_users(chat_member: bool = None):
     with Session() as session:
         query = session.query(User)
-        if with_subscription is not None:
-            if with_subscription:
-                query = query.filter(User.subscription_end > datetime.utcnow())
+        if chat_member is not None:
+            if chat_member:
+                query = query.filter(User.chat_member.is_(True))
             else:
-                query = query.filter(User.subscription_end <= datetime.utcnow())
+                query = query.filter(User.chat_member.is_(False))
         return query.all()
 
 async def create_static_profile(name: str, vless_url: str):
@@ -106,6 +86,6 @@ async def get_static_profiles():
 async def get_user_stats():
     with Session() as session:
         total = session.query(func.count(User.id)).scalar()
-        with_sub = session.query(func.count(User.id)).filter(User.subscription_end > datetime.utcnow()).scalar()
-        without_sub = total - with_sub
-        return total, with_sub, without_sub
+        chat_members = session.query(func.count(User.id)).filter(User.chat_member).scalar()
+        strangers = total - chat_members
+        return total, chat_members, strangers
