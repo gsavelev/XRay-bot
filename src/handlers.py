@@ -229,24 +229,49 @@ async def admin_user_list(callback: CallbackQuery):
     await callback.message.edit_text("**Выберите фильтр**", reply_markup=builder.as_markup(), parse_mode='Markdown')
 
 @router.callback_query(F.data == "user_list_chat_members")
-async def handle_user_list_active(callback: CallbackQuery):
+async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
+    """
+    Показать актуальный список пользователей-участников чата.
+    Перед выводом список синхронизируется с реальным состоянием чата:
+    пользователи, вышедшие из чата, помечаются как chat_member = False.
+    """
+    # Берем текущий список отмеченных как участники
     users = await get_all_users(chat_member=True)
     if not users:
         await callback.answer("Нет пользователей участников чата")
         return
-    
+
+    # Синхронизируем флаг chat_member с реальным статусом в Telegram
+    has_changes = False
+    with Session() as session:
+        for user in users:
+            is_member = await check_if_user_chat_member(user.telegram_id, bot)
+            if not is_member:
+                db_user = session.query(User).get(user.id)
+                if db_user and db_user.chat_member:
+                    db_user.chat_member = False
+                    has_changes = True
+        if has_changes:
+            session.commit()
+
+    # Повторно запрашиваем только тех, кто действительно остается участником
+    users = await get_all_users(chat_member=True)
+    if not users:
+        await callback.answer("Нет пользователей участников чата")
+        return
+
     text = "👤 <b>Пользователи участники чата:</b>\n\n"
     for user in users:
         username = f"@{user.username}" if user.username else "none"
         user_line = f"• {user.full_name} ({username} | <code>{user.telegram_id}</code>)\n"
-        
+
         # Если текст становится слишком длинным, отправляем текущую часть и начинаем новую
         if len(text) + len(user_line) > MAX_MESSAGE_LENGTH:
             await callback.message.answer(text, parse_mode="HTML")
             text = "👤 <b>Пользователи участники чата (продолжение):</b>\n\n"
-        
+
         text += user_line
-    
+
     # Отправляем оставшуюся часть текста
     await callback.message.answer(text, parse_mode="HTML")
 

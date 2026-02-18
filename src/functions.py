@@ -397,8 +397,8 @@ class XUIAPI:
 
     async def get_online_users(self):
         if not await self.login():
-            logger.error("🛑 Login failed before getting stats")
-            return {"upload": 0, "download": 0}
+            logger.error("🛑 Login failed before getting online users")
+            return 0
         
         try:
             base_url = config.XUI_API_URL.rstrip('/')
@@ -426,8 +426,8 @@ class XUIAPI:
                 except:
                     return 0
         except Exception as e:
-            logger.error(f"🛑 Stats error: {e}")
-        return {"upload": 0, "download": 0}
+            logger.error(f"🛑 Get online users error: {e}")
+        return 0
 
     async def close(self):
         if self.session:
