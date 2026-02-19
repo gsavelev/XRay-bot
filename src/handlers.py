@@ -221,8 +221,8 @@ async def admin_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_user_list")
 async def admin_user_list(callback: CallbackQuery):
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Активные пользователи", callback_data="user_list_active")
-    builder.button(text="🛑 Отключенные пользователи", callback_data="user_list_inactive")
+    builder.button(text="✅ Активные", callback_data="user_list_active")
+    builder.button(text="🛑 Отключенные", callback_data="user_list_inactive")
     builder.button(text="⏱️ Статические профили", callback_data="static_profiles_menu")
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1, 1, 1)
@@ -308,7 +308,7 @@ async def admin_send_message_start(callback: CallbackQuery, state: FSMContext):
     builder.adjust(1)
     
     await callback.message.edit_text(
-        "Выберите целевую аудиторию для рассылки:",
+        "Выберите целевую аудиторию для рассылки",
         reply_markup=builder.as_markup()
     )
 
@@ -317,7 +317,7 @@ async def admin_send_message_target(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # Снимаем анимацию
     target = callback.data.split("_")[1]
     await state.update_data(target=target)
-    await callback.message.answer("Введите сообщение для рассылки:")
+    await callback.message.answer("Введите сообщение для рассылки")
     await state.set_state(AdminStates.SEND_MESSAGE)
 
 @router.message(AdminStates.SEND_MESSAGE)
@@ -366,7 +366,7 @@ async def static_profiles_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "static_profile_add")
 async def static_profile_add(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # Снимаем анимацию
-    await callback.message.answer("Введите имя для статического профиля:")
+    await callback.message.answer("Введите имя для статического профиля")
     await state.set_state(AdminStates.CREATE_STATIC_PROFILE)
 
 @router.message(AdminStates.CREATE_STATIC_PROFILE)
