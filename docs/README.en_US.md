@@ -27,7 +27,7 @@ Key Features:
 1. Clone the repository:
 
 ```bash
-git clone https://gitlab.thinkmobile.agency/g.savelyev/XRay-bot
+git clone https://github.com/gsavelev/XRay-bot
 cd XRay-bot
 ```
 
