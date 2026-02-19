@@ -86,6 +86,6 @@ async def get_static_profiles():
 async def get_user_stats():
     with Session() as session:
         total = session.query(func.count(User.id)).scalar()
-        chat_members = session.query(func.count(User.id)).filter(User.chat_member).scalar()
-        strangers = total - chat_members
-        return total, chat_members, strangers
+        active_users = session.query(func.count(User.id)).filter(User.chat_member).scalar()
+        inactive_users = total - active_users
+        return total, active_users, inactive_users 

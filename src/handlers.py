@@ -198,13 +198,13 @@ async def admin_menu(callback: CallbackQuery):
         await callback.answer("🛑 Доступ запрещен!")
         return
     
-    total, chat_members, strangers = await db_user_stats()
+    total, active_users, inactive_users = await db_user_stats()
     online_count = await get_online_users()
     
     text = (
         "**Административное меню**\n\n"
         f"**Всего пользователей**: `{total}`\n"
-        f"**Участники чата / незнакомцы**: `{chat_members}` / `{strangers}`\n"
+        f"**Активные / отключенные пользователи**: `{active_users}` / `{inactive_users}`\n"
         f"**Онлайн**: `{online_count}` | **Офлайн**: `{total - online_count}`"
     )
     
@@ -221,24 +221,24 @@ async def admin_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_user_list")
 async def admin_user_list(callback: CallbackQuery):
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Участники чата", callback_data="user_list_chat_members")
-    builder.button(text="🛑 Чужаки", callback_data="user_list_strangers")
+    builder.button(text="✅ Активные пользователи", callback_data="user_list_active")
+    builder.button(text="🛑 Отключенные пользователи", callback_data="user_list_inactive")
     builder.button(text="⏱️ Статические профили", callback_data="static_profiles_menu")
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1, 1, 1)
     await callback.message.edit_text("**Выберите фильтр**", reply_markup=builder.as_markup(), parse_mode='Markdown')
 
-@router.callback_query(F.data == "user_list_chat_members")
+@router.callback_query(F.data == "user_list_active")
 async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
     """
-    Показать актуальный список пользователей-участников чата.
+    Показать актуальный список активных пользователей (участников чата).
     Перед выводом список синхронизируется с реальным состоянием чата:
     пользователи, вышедшие из чата, помечаются как chat_member = False.
     """
     # Берем текущий список отмеченных как участники
     users = await get_all_users(chat_member=True)
     if not users:
-        await callback.answer("Нет пользователей участников чата")
+        await callback.answer("Нет активных пользователей")
         return
 
     # Синхронизируем флаг chat_member с реальным статусом в Telegram
@@ -257,10 +257,10 @@ async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
     # Повторно запрашиваем только тех, кто действительно остается участником
     users = await get_all_users(chat_member=True)
     if not users:
-        await callback.answer("Нет пользователей участников чата")
+        await callback.answer("Нет активных пользователей")
         return
 
-    text = "👤 <b>Пользователи участники чата:</b>\n\n"
+    text = "👤 <b>Активные пользователи:</b>\n\n"
     for user in users:
         username = f"@{user.username}" if user.username else "none"
         user_line = f"• {user.full_name} ({username} | <code>{user.telegram_id}</code>)\n"
@@ -268,21 +268,21 @@ async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
         # Если текст становится слишком длинным, отправляем текущую часть и начинаем новую
         if len(text) + len(user_line) > MAX_MESSAGE_LENGTH:
             await callback.message.answer(text, parse_mode="HTML")
-            text = "👤 <b>Пользователи участники чата (продолжение):</b>\n\n"
+            text = "👤 <b>Активные пользователи (продолжение):</b>\n\n"
 
         text += user_line
 
     # Отправляем оставшуюся часть текста
     await callback.message.answer(text, parse_mode="HTML")
 
-@router.callback_query(F.data == "user_list_strangers")
+@router.callback_query(F.data == "user_list_inactive")
 async def handle_user_list_inactive(callback: CallbackQuery):
     users = await get_all_users(chat_member=False)
     if not users:
-        await callback.answer("Нет пользователей чужаков")
+        await callback.answer("Нет отключенных пользователей")
         return
     
-    text = "👤 <b>Пользователи чужаки:</b>\n\n"
+    text = "👤 <b>Отключенные пользователи:</b>\n\n"
     for user in users:
         username = f"@{user.username}" if user.username else "none"
         user_line = f"• {user.full_name} ({username} | <code>{user.telegram_id}</code>)\n"
@@ -290,7 +290,7 @@ async def handle_user_list_inactive(callback: CallbackQuery):
         # Если текст становится слишком длинным, отправляем текущую часть и начинаем новую
         if len(text) + len(user_line) > MAX_MESSAGE_LENGTH:
             await callback.message.answer(text, parse_mode="HTML")
-            text = "👤 <b>Пользователи чужаки (продолжение):</b>\n\n"
+            text = "👤 <b>Отключенные пользователи (продолжение):</b>\n\n"
         
         text += user_line
     
@@ -301,8 +301,8 @@ async def handle_user_list_inactive(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_send_message")
 async def admin_send_message_start(callback: CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Участники чата", callback_data="target_chat_members")
-    builder.button(text="🛑 Чужаки", callback_data="target_strangers")
+    builder.button(text="✅ Активным", callback_data="target_active")
+    builder.button(text="🛑 Отключенным", callback_data="target_inactive")
     builder.button(text="👥 Всем пользователям", callback_data="target_all")
     builder.button(text="↩️ Назад", callback_data="admin_menu")
     builder.adjust(1)
@@ -327,9 +327,9 @@ async def admin_send_message(message: Message, state: FSMContext, bot: Bot):
     text = message.text
     
     users = []
-    if target == "chat_members":
+    if target == "active":
         users = await get_all_users(chat_member=True)
-    elif target == "strangers":
+    elif target == "inactive":
         users = await get_all_users(chat_member=False)
     else:  # all
         users = await get_all_users()
