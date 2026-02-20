@@ -203,7 +203,7 @@ async def admin_menu(callback: CallbackQuery):
     text = (
         "**Административное меню**\n\n"
         f"**Пользователей онлайн (по всем inbounds)**: `{online_users_count}`\n"
-        f"**В чате / изгои**: `{chat_members_count}` / `{strangers_count}`\n"
+        f"**Члены чата / изгои**: `{chat_members_count}` / `{strangers_count}`\n"
     )
     
     builder = InlineKeyboardBuilder()
@@ -313,7 +313,7 @@ async def admin_send_message_start(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.startswith("target_"))
 async def admin_send_message_target(callback: CallbackQuery, state: FSMContext):
     await callback.answer()  # Снимаем анимацию
-    target = callback.data.split("_")[1]
+    target = callback.data.split("_", maxsplit=1)[1]
     await state.update_data(target=target)
     await callback.message.answer("Введите сообщение для рассылки")
     await state.set_state(AdminStates.SEND_MESSAGE)
@@ -327,7 +327,7 @@ async def admin_send_message(message: Message, state: FSMContext, bot: Bot):
     users = []
     if target == "chat_members":
         users = await get_all_users(chat_member=True)
-    elif target == "not_chat_memebers":
+    elif target == "not_chat_members":
         users = await get_all_users(chat_member=False)
     else:  # all
         users = await get_all_users()
