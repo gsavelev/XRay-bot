@@ -202,8 +202,8 @@ async def admin_menu(callback: CallbackQuery):
     
     text = (
         "**Административное меню**\n\n"
-        f"**Пользователей онлайн (по всем inbounds)**: `{online_users_count}`\n"
-        f"**Члены чата | изгои**: `{chat_members_count}` | `{strangers_count}`\n"
+        f"Пользователей онлайн (по всем inbounds): `{online_users_count}`\n"
+        f"Члены чата: `{chat_members_count}` | изгои: `{strangers_count}`\n"
     )
     
     builder = InlineKeyboardBuilder()
