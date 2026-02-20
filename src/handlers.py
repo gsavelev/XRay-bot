@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import json
-from datetime import datetime, timedelta
 from aiogram import Dispatcher, Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
@@ -16,8 +15,8 @@ from database import (
 )
 from functions import (
     create_vless_profile, delete_client_by_email, generate_vless_url,
-    get_user_stats, create_static_client, get_global_stats, get_online_users,
-    check_if_user_chat_member, get_chat_name,
+    get_user_stats, create_static_client, get_global_stats,
+    get_online_users_count, check_if_user_chat_member, get_chat_name,
 )
 
 logger = logging.getLogger(__name__)
@@ -198,14 +197,13 @@ async def admin_menu(callback: CallbackQuery):
         await callback.answer("🛑 Доступ запрещен!")
         return
     
-    total, active_users, inactive_users = await db_user_stats()
-    online_count = await get_online_users()
+    _, chat_members_count, strangers_count = await db_user_stats()
+    online_users_count = await get_online_users_count()
     
     text = (
         "**Административное меню**\n\n"
-        f"**Всего пользователей**: `{total}`\n"
-        f"**Активные / отключенные пользователи**: `{active_users}` / `{inactive_users}`\n"
-        f"**Онлайн**: `{online_count}` | **Офлайн**: `{total - online_count}`"
+        f"**Пользователей онлайн (по всем inbounds)**: `{online_users_count}`\n"
+        f"**В чате / изгои**: `{chat_members_count}` / `{strangers_count}`\n"
     )
     
     builder = InlineKeyboardBuilder()
@@ -221,24 +219,24 @@ async def admin_menu(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_user_list")
 async def admin_user_list(callback: CallbackQuery):
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Активные", callback_data="user_list_active")
-    builder.button(text="🛑 Отключенные", callback_data="user_list_inactive")
+    builder.button(text="✅ Члены чата", callback_data="user_list_chat_members")
+    builder.button(text="🛑 Изгои", callback_data="user_list_not_chat_members")
     builder.button(text="⏱️ Статические профили", callback_data="static_profiles_menu")
     builder.button(text="⬅️ Назад", callback_data="admin_menu")
     builder.adjust(1, 1, 1)
     await callback.message.edit_text("**Выберите фильтр**", reply_markup=builder.as_markup(), parse_mode='Markdown')
 
-@router.callback_query(F.data == "user_list_active")
-async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
+@router.callback_query(F.data == "user_list_chat_members")
+async def handle_user_list_chat_members(callback: CallbackQuery, bot: Bot):
     """
-    Показать актуальный список активных пользователей (участников чата).
+    Показать список участников чата.
     Перед выводом список синхронизируется с реальным состоянием чата:
     пользователи, вышедшие из чата, помечаются как chat_member = False.
     """
     # Берем текущий список отмеченных как участники
     users = await get_all_users(chat_member=True)
     if not users:
-        await callback.answer("Нет активных пользователей")
+        await callback.answer("Нет членов чата")
         return
 
     # Синхронизируем флаг chat_member с реальным статусом в Telegram
@@ -257,10 +255,10 @@ async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
     # Повторно запрашиваем только тех, кто действительно остается участником
     users = await get_all_users(chat_member=True)
     if not users:
-        await callback.answer("Нет активных пользователей")
+        await callback.answer("Нет членов чата")
         return
 
-    text = "👤 <b>Активные пользователи:</b>\n\n"
+    text = "👤 <b>Члены чата:</b>\n\n"
     for user in users:
         username = f"@{user.username}" if user.username else "none"
         user_line = f"• {user.full_name} ({username} | <code>{user.telegram_id}</code>)\n"
@@ -268,21 +266,21 @@ async def handle_user_list_active(callback: CallbackQuery, bot: Bot):
         # Если текст становится слишком длинным, отправляем текущую часть и начинаем новую
         if len(text) + len(user_line) > MAX_MESSAGE_LENGTH:
             await callback.message.answer(text, parse_mode="HTML")
-            text = "👤 <b>Активные пользователи (продолжение):</b>\n\n"
+            text = "👤 <b>Члены чата (продолжение):</b>\n\n"
 
         text += user_line
 
     # Отправляем оставшуюся часть текста
     await callback.message.answer(text, parse_mode="HTML")
 
-@router.callback_query(F.data == "user_list_inactive")
-async def handle_user_list_inactive(callback: CallbackQuery):
+@router.callback_query(F.data == "user_list_not_chat_members")
+async def handle_user_list_not_chat_members(callback: CallbackQuery):
     users = await get_all_users(chat_member=False)
     if not users:
-        await callback.answer("Нет отключенных пользователей")
+        await callback.answer("Нет изгоев")
         return
     
-    text = "👤 <b>Отключенные пользователи:</b>\n\n"
+    text = "👤 <b>Изгои:</b>\n\n"
     for user in users:
         username = f"@{user.username}" if user.username else "none"
         user_line = f"• {user.full_name} ({username} | <code>{user.telegram_id}</code>)\n"
@@ -290,7 +288,7 @@ async def handle_user_list_inactive(callback: CallbackQuery):
         # Если текст становится слишком длинным, отправляем текущую часть и начинаем новую
         if len(text) + len(user_line) > MAX_MESSAGE_LENGTH:
             await callback.message.answer(text, parse_mode="HTML")
-            text = "👤 <b>Отключенные пользователи (продолжение):</b>\n\n"
+            text = "👤 <b>Изгои (продолжение):</b>\n\n"
         
         text += user_line
     
@@ -301,8 +299,8 @@ async def handle_user_list_inactive(callback: CallbackQuery):
 @router.callback_query(F.data == "admin_send_message")
 async def admin_send_message_start(callback: CallbackQuery, state: FSMContext):
     builder = InlineKeyboardBuilder()
-    builder.button(text="✅ Активным", callback_data="target_active")
-    builder.button(text="🛑 Отключенным", callback_data="target_inactive")
+    builder.button(text="✅ Членам чата", callback_data="target_chat_members")
+    builder.button(text="🛑 Изгоям", callback_data="target_not_chat_members")
     builder.button(text="👥 Всем пользователям", callback_data="target_all")
     builder.button(text="↩️ Назад", callback_data="admin_menu")
     builder.adjust(1)
@@ -327,9 +325,9 @@ async def admin_send_message(message: Message, state: FSMContext, bot: Bot):
     text = message.text
     
     users = []
-    if target == "active":
+    if target == "chat_members":
         users = await get_all_users(chat_member=True)
-    elif target == "inactive":
+    elif target == "not_chat_memebers":
         users = await get_all_users(chat_member=False)
     else:  # all
         users = await get_all_users()

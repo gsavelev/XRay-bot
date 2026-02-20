@@ -395,7 +395,7 @@ class XUIAPI:
             logger.error(f"🛑 Stats error: {e}")
         return {"upload": 0, "download": 0}
 
-    async def get_online_users(self):
+    async def get_online_users_across_inbounds(self):
         if not await self.login():
             logger.error("🛑 Login failed before getting online users")
             return 0
@@ -410,19 +410,18 @@ class XUIAPI:
             async with self.session.post(url) as resp:
                 if resp.status != 200:
                     return 0
-
-                
                 try:
                     data = await resp.json()
                     logger.debug(data)
-                    online = 0
+                    online_users_count = 0
                     if data.get("success"):
                         users = data.get("obj")
-                        if isinstance(users, list):
-                            for user in users:
-                                if str(user).startswith("user_"):
-                                    online += 1
-                        return online
+                        try:
+                            online_users_count = len(users)
+                        except Exception as e:
+                            logger.error(f"🛑 Get online users error: {e}")
+                        finally:
+                            return online_users_count
                 except:
                     return 0
         except Exception as e:
@@ -432,6 +431,7 @@ class XUIAPI:
     async def close(self):
         if self.session:
             await self.session.close()
+
 
 async def create_vless_profile(telegram_id: int):
     api = XUIAPI()
@@ -461,10 +461,10 @@ async def get_global_stats():
     finally:
         await api.close()
 
-async def get_online_users():
+async def get_online_users_count():
     api = XUIAPI()
     try:
-        return await api.get_online_users()
+        return await api.get_online_users_across_inbounds()
     finally:
         await api.close()
 
