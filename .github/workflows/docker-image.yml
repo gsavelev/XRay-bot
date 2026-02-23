@@ -13,4 +13,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ${{ github.repository }}:$(date +%s)
+      run: |
+        REPO_NAME_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+        docker build . --file Dockerfile --tag ${REPO_NAME_LC}:$(date +%s)
