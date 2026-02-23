@@ -4,6 +4,10 @@ on:
   push:
     branches: [ "master" ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build:
@@ -12,7 +16,19 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
+
+    - name: Log in to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+    - name: Build and push Docker image to GHCR
       run: |
-        REPO_NAME_LC=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-        docker build . --file Dockerfile --tag ${REPO_NAME_LC}:$(date +%s)
+        OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+        IMAGE_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
+        IMAGE_ID=ghcr.io/${OWNER_LC}/${IMAGE_NAME}
+        IMAGE_TAG=${IMAGE_ID}:${{ github.sha }}
+        LATEST_TAG=${IMAGE_ID}:latest
+
+        docker build . --file Dockerfile --tag "${IMAGE_TAG}"
+        docker tag "${IMAGE_TAG}" "${LATEST_TAG}"
+        docker push "${IMAGE_TAG}"
+        docker push "${LATEST_TAG}"
