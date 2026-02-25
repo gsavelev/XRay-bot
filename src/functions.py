@@ -8,6 +8,8 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Chat
 
+from aiohttp.client_exceptions import ContentTypeError
+
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -46,7 +48,6 @@ class XUIAPI:
                     logger.error(f"🛑 Login failed with status: {resp.status}")
                     return False
                 
-                # Проверяем JSON ответ
                 try:
                     response = await resp.json()
                     if response.get("success"):
@@ -58,8 +59,7 @@ class XUIAPI:
                     else:
                         logger.error(f"🛑 Login failed: {response.get('msg')}")
                         return False
-                except:
-                    # Если ответ не JSON, проверяем текст
+                except ContentTypeError:
                     text = await resp.text()
                     if "success" in text.lower():
                         logger.warning("⚠️ Login successful (text response)")
@@ -102,7 +102,7 @@ class XUIAPI:
                     else:
                         logger.error(f"🛑 Get inbound failed: {data.get('msg')}")
                         return None
-                except:
+                except ContentTypeError:
                     text = await resp.text()
                     logger.error(f"🛑 Get inbound response error: {text[:100]}...")
                     return None
@@ -129,7 +129,7 @@ class XUIAPI:
                 try:
                     response = await resp.json()
                     return response.get("success", False)
-                except:
+                except ContentTypeError:
                     text = await resp.text()
                     return "success" in text.lower()
         except Exception as e:
@@ -357,8 +357,9 @@ class XUIAPI:
                                 "upload": client_data.get("up", 0),
                                 "download": client_data.get("down", 0)
                             }
-                except:
+                except ContentTypeError:
                     return {"upload": 0, "download": 0}
+
         except Exception as e:
             logger.error(f"🛑 Stats error: {e}")
         return {"upload": 0, "download": 0}
@@ -389,8 +390,9 @@ class XUIAPI:
                                 "upload": client_data.get("up", 0),
                                 "download": client_data.get("down", 0)
                             }
-                except:
+                except ContentTypeError:
                     return {"upload": 0, "download": 0}
+
         except Exception as e:
             logger.error(f"🛑 Stats error: {e}")
         return {"upload": 0, "download": 0}
@@ -422,7 +424,7 @@ class XUIAPI:
                             logger.error(f"🛑 Get online users error: {e}")
                         finally:
                             return online_users_count
-                except:
+                except ContentTypeError:
                     return 0
         except Exception as e:
             logger.error(f"🛑 Get online users error: {e}")
