@@ -463,19 +463,19 @@ async def connect_profile(callback: CallbackQuery):
         "1. Скачайте приложение для вашей платформы\n"
         "2. Скопируйте эту ссылку и импортируйте в приложение:\n\n"
         f"`{vless_url}`\n\n"
-        "3. Активируйте соединение в приложении\n"
-        "(опционально) Добавьте пути [[гайд](https://telegra.ph/Nastrojka-marshrutizacii-routing-na-kliente-02-24)] и перезапустите соединение"
+        "3. Активируйте соединение в приложении\n\n"
+        "(опционально) Добавьте пути и перезапустите соединение [гайд](https://telegra.ph/Nastrojka-marshrutizacii-routing-na-kliente-02-24)"
     )
 
     builder = InlineKeyboardBuilder()
     builder.button(text='️Windows [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Windows-Setup-x64.exe')
     builder.button(text='Linux [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Debian-x64.deb')
-    builder.button(text=' [V2RayTun]', url='https://apps.apple.com/ru/app/v2raytun/id6476628951')
+    builder.button(text='iOS/macOS [V2RayTun]', url='https://apps.apple.com/ru/app/v2raytun/id6476628951')
     builder.button(text='Android [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Android-universal.apk')
     builder.button(text="⬅️ Назад", callback_data="back_to_menu")
     builder.adjust(2, 2, 1)
 
-    await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode='Markdown')
+    await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode='Markdown', link_preview_options="is_disabled")
 
 @router.callback_query(F.data == "stats")
 async def user_stats(callback: CallbackQuery):
