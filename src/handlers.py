@@ -463,17 +463,17 @@ async def connect_profile(callback: CallbackQuery):
         "1. Скачайте приложение для вашей платформы\n"
         "2. Скопируйте эту ссылку и импортируйте в приложение:\n\n"
         f"`{vless_url}`\n\n"
-        "3. Активируйте соединение в приложении."
+        "3. Активируйте соединение в приложении\n"
+        "(опционально) Добавьте пути [[гайд](https://telegra.ph/Nastrojka-marshrutizacii-routing-na-kliente-02-24)] и перезапустите соединение"
     )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text='🖥️ Windows [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/latest/download/Hiddify-Windows-Setup-x64.Msix')
-    builder.button(text='🐧 Linux [NekoBox]', url='https://github.com/MatsuriDayo/nekoray/releases/download/4.0.1/nekoray-4.0.1-2024-12-12-debian-x64.deb')
-    builder.button(text='🍎 Mac [V2RayU]', url='https://github.com/yanue/V2rayU/releases/download/v4.2.6/V2rayU-64.dmg ')
-    builder.button(text='🍏 iOS [V2RayTun]', url='https://apps.apple.com/ru/app/v2raytun/id6476628951')
-    builder.button(text='🤖 Android [V2RayNG]', url='https://github.com/2dust/v2rayNG/releases/download/1.10.16/v2rayNG_1.10.16_arm64-v8a.apk')
+    builder.button(text='️Windows [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Windows-Setup-x64.exe')
+    builder.button(text='Linux [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Debian-x64.deb')
+    builder.button(text=' [V2RayTun]', url='https://apps.apple.com/ru/app/v2raytun/id6476628951')
+    builder.button(text='Android [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Android-universal.apk')
     builder.button(text="⬅️ Назад", callback_data="back_to_menu")
-    builder.adjust(2, 2, 1, 1)
+    builder.adjust(2, 2, 1)
 
     await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode='Markdown')
 
