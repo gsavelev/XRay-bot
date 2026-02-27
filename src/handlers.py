@@ -475,7 +475,12 @@ async def connect_profile(callback: CallbackQuery):
     builder.button(text="⬅️ Назад", callback_data="back_to_menu")
     builder.adjust(2, 2, 1)
 
-    await callback.message.edit_text(text, reply_markup=builder.as_markup(), parse_mode='Markdown', link_preview_options="is_disabled")
+    await callback.message.edit_text(
+        text,
+        reply_markup=builder.as_markup(),
+        parse_mode='Markdown',
+        disable_web_page_preview=True,
+    )
 
 @router.callback_query(F.data == "stats")
 async def user_stats(callback: CallbackQuery):
