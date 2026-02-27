@@ -464,7 +464,7 @@ async def connect_profile(callback: CallbackQuery):
         "2. Скопируйте эту ссылку и импортируйте в приложение:\n\n"
         f"`{vless_url}`\n\n"
         "3. Активируйте соединение в приложении\n\n"
-        "(опционально) Добавьте пути и перезапустите соединение [гайд](https://telegra.ph/Nastrojka-marshrutizacii-routing-na-kliente-02-24)"
+        "(опционально) Добавьте пути [гайд](https://telegra.ph/Nastrojka-marshrutizacii-routing-na-kliente-02-24)"
     )
 
     builder = InlineKeyboardBuilder()
