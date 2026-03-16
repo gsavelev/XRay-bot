@@ -468,10 +468,10 @@ async def connect_profile(callback: CallbackQuery):
     )
 
     builder = InlineKeyboardBuilder()
-    builder.button(text='️Windows [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Windows-Setup-x64.exe')
-    builder.button(text='Linux [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Debian-x64.deb')
+    builder.button(text='️Windows [V2RayTun]', url='https://storage.v2raytun.com/v2RayTun_Setup.exe')
+    builder.button(text='Linux [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases')
     builder.button(text='iOS/macOS [V2RayTun]', url='https://apps.apple.com/ru/app/v2raytun/id6476628951')
-    builder.button(text='Android [Hiddify]', url='https://github.com/hiddify/hiddify-app/releases/download/v4.0.4/Hiddify-Android-universal.apk')
+    builder.button(text='Android [Hiddify]', url='https://play.google.com/store/apps/details?id=app.hiddify.com')
     builder.button(text="⬅️ Назад", callback_data="back_to_menu")
     builder.adjust(2, 2, 1)
 
