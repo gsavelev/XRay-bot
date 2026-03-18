@@ -187,7 +187,7 @@ async def help_msg(callback: CallbackQuery, bot: Bot):
     builder = InlineKeyboardBuilder()
     builder.button(text="⬅️ Назад", callback_data="back_to_menu")
     chat_name = await get_chat_name(bot, config.CHAT_ID)
-    text = f"Об ошибках в работе бота пиши в чат `{chat_name}`"
+    text = f"Проблемы в работе сети и бота обсуждаем в чатe `{chat_name}`"
     await callback.message.answer(text, parse_mode='Markdown', reply_markup=builder.as_markup())
 
 @router.callback_query(F.data == "admin_menu")
