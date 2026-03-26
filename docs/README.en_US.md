@@ -1,6 +1,6 @@
 **Язык / Language:** [Русский](../README.md) **|** <ins>English</ins>
 
-<div id="header" align="center"><h1>XRay VPN Bot [Telegram]</h1></div>
+<div id="header" align="center"><h1>Telegram bot for 3X-UI [Xray panel]</h1></div>
 
 ## Project Description
 
