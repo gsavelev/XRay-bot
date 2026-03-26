@@ -27,8 +27,8 @@ Key Features:
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/gsavelev/XRay-bot
-cd XRay-bot
+git clone https://github.com/gsavelev/3xui-bot.git
+cd 3xui-bot
 ```
 
 2. Install dependencies:
