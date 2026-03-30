@@ -55,7 +55,7 @@ pip install -r requirements.txt
 
 ```bash
 cp src/.env.example src/.env
-# Отредактируйте .env файл со своими значениями
+# отредактируйте .env файл со своими значениями
 ```
 
 4. Создайте директорию для хранения базы данных:
@@ -107,9 +107,7 @@ docker run -d --name 3xui-bot \
 ```
 
 5. (Опционально) Автоматическое обновление через `Watchtower`
-
-Если запустить `watchtower`, он будет подтягивать обновлённый образ и перезапускать контейнер.
-Так как в примере уже добавлен label `com.centurylinklabs.watchtower.enable=true`, контейнер будет обновляться автоматически.
+Если запустить `watchtower`, он будет подтягивать обновлённый образ и перезапускать контейнер. Так как в примере уже добавлен label `com.centurylinklabs.watchtower.enable=true`, контейнер будет обновляться автоматически.
 Официальная документация: [https://containrrr.dev/watchtower/](https://containrrr.dev/watchtower/)
 
 ## Техническая архитектура
