@@ -106,9 +106,8 @@ docker run -d --name 3xui-bot \
   ghcr.io/gsavelev/3xui-bot:latest
 ```
 
-5. (Опционально) Автоматическое обновление через `Watchtower`
-Если запустить `watchtower`, он будет подтягивать обновлённый образ и перезапускать контейнер. Так как в примере уже добавлен label `com.centurylinklabs.watchtower.enable=true`, контейнер будет обновляться автоматически.
-Официальная документация: [https://containrrr.dev/watchtower/](https://containrrr.dev/watchtower/)
+5. (Опционально) Автоматическое обновление через `Watchtower`:\
+Если запустить `watchtower`, он будет подтягивать обновлённый образ и перезапускать контейнер. Так как в примере уже добавлен label `com.centurylinklabs.watchtower.enable=true`, контейнер будет обновляться автоматически. Официальная документация: [https://containrrr.dev/watchtower/](https://containrrr.dev/watchtower/)
 
 ## Техническая архитектура
 

@@ -101,7 +101,7 @@ docker run -d --name 3xui-bot \
   ghcr.io/gsavelev/3xui-bot:latest
 ```
 
-5. (Optional) Automatic updates via `Watchtower`:
+5. (Optional) Automatic updates via `Watchtower`:\
 If you run `watchtower`, it will pull the updated image and restart the container. Since the example already includes the label `com.centurylinklabs.watchtower.enable=true`, the container will be updated automatically. Official documentation: [https://containrrr.dev/watchtower/](https://containrrr.dev/watchtower/)
 
 ## Technical Architecture
