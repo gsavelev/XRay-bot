@@ -22,7 +22,19 @@ Key Features:
    - An inbound created with the security set to `Reality`
 - A Telegram bot (created via `@BotFather`)
 
-### Installation Steps
+### Environment Variables Configuration
+
+Mandatory parameters in `.env`:
+
+- `BOT_TOKEN` - Your Telegram bot token from @BotFather
+- `ADMINS` - Administrator IDs, comma-separated
+- `CHAT_ID` - Chat/group ID with users
+- `XUI_API_URL` - 3X-UI panel URL (e.g., http://ip:54321)
+- `XUI_USERNAME` and `XUI_PASSWORD` - Panel credentials
+- `INBOUND_ID` - Inbound ID in the 3X-UI panel
+- Reality parameters (public key, fingerprint, SNI, etc.)
+
+### Installation from repository 
 
 1. Clone the repository:
 
@@ -43,7 +55,7 @@ pip install -r requirements.txt
 
 ```bash
 cp src/.env.example src/.env
-# Edit the .env file with your values
+# edit the .env file with your values
 ```
 
 4. Create a directory for database storage:
@@ -58,17 +70,38 @@ mkdir -p ./app/data
 python3 src/app.py
 ```
 
-### Environment Variables Configuration
+### Installation from Packages (GitHub Container Registry)
+This option is convenient for running the bot on a server without installing Python locally.
 
-Mandatory parameters in `.env`:
+1. Download the image from GHCR:
+```bash
+docker pull ghcr.io/gsavelev/3xui-bot:latest
+```
 
-- `BOT_TOKEN` - Your Telegram bot token from @BotFather
-- `ADMINS` - Administrator IDs, comma-separated
-- `CHAT_ID` - Chat/group ID with users
-- `XUI_API_URL` - 3X-UI panel URL (e.g., http://ip:54321)
-- `XUI_USERNAME` and `XUI_PASSWORD` - Panel credentials
-- `INBOUND_ID` - Inbound ID in the 3X-UI panel
-- Reality parameters (public key, fingerprint, SNI, etc.)
+2. Clone the repository:
+```bash
+git clone https://github.com/gsavelev/3xui-bot.git
+cd 3xui-bot
+```
+
+3. Prepare the env file and a directory for SQLite data (saved inside the container at /app/data):
+```bash
+mkdir ./data
+cp ./src/.env.example ./.env
+# edit ./.env with your values
+```
+
+4. Run the container:
+```bash
+docker run -d --name 3xui-bot \
+  --restart unless-stopped \
+  --env-file ./.env \
+  -v "$(pwd)/data:/app/data" \
+  --label com.centurylinklabs.watchtower.enable=true \
+  ghcr.io/gsavelev/3xui-bot:latest
+```
+
+5. (Optional) Automatic updates via Watchtower If you run watchtower, it will pull the updated image and restart the container. Since the example already includes the label com.centurylinklabs.watchtower.enable=true, the container will be updated automatically. Official documentation: https://containrrr.dev/watchtower/
 
 ## Technical Architecture
 

@@ -1,6 +1,6 @@
-**Язык / Language:** <ins>Русский</ins> **|** [English](./docs/README.en_US.md)
+**Язык / Language:** Русский **|** [English](./docs/README.en_US.md)
 
-<div id="header" align="center"><h1>Telegram бот для 3X-UI [Xray панель]</h1></div>
+# Telegram бот для 3X-UI [Xray панель]
 
 ## Описание проекта
 
@@ -19,10 +19,22 @@
 
 - Python 3.10+
 - Панель управления 3X-UI
-   - Создан inbound с параметром "Безопасность `Reality`"
+  - Создан inbound с параметром "Безопасность `Reality`"
 - Telegram бот (созданный через `@BotFather`)
 
-### Шаги установки
+### Настройка переменных окружения
+
+Обязательные параметры в `.env`:
+
+- `BOT_TOKEN` - токен вашего Telegram бота от @BotFather
+- `ADMINS` - ID администраторов через запятую
+- `CHAT_ID` - ID чата / группы с пользователями
+- `XUI_API_URL` - URL панели 3X-UI (например: [http://ip:54321](http://ip:54321))
+- `XUI_USERNAME` и `XUI_PASSWORD` - учетные данные панели
+- `INBOUND_ID` - ID инбаунда в панели 3X-UI
+- Параметры Reality (публичный ключ, fingerprint, SNI и т.д.)
+
+### Установкa из репозитория
 
 1. Клонируйте репозиторий:
 
@@ -48,7 +60,7 @@ cp src/.env.example src/.env
 
 4. Создайте директорию для хранения базы данных:
 
-``` bash
+```bash
 mkdir -p ./app/data
 ```
 
@@ -58,17 +70,47 @@ mkdir -p ./app/data
 python3 src/app.py
 ```
 
-### Настройка переменных окружения
+### Установкa из Packages (GitHub Container Registry)
 
-Обязательные параметры в `.env`:
+Этот вариант удобен для запуска бота на сервере без локальной установки Python.
 
-- `BOT_TOKEN` - токен вашего Telegram бота от @BotFather
-- `ADMINS` - ID администраторов через запятую
-- `CHAT_ID` - ID чата / группы с пользователями
-- `XUI_API_URL` - URL панели 3X-UI (например: http://ip:54321)
-- `XUI_USERNAME` и `XUI_PASSWORD` - учетные данные панели
-- `INBOUND_ID` - ID инбаунда в панели 3X-UI
-- Параметры Reality (публичный ключ, fingerprint, SNI и т.д.)
+1. Скачайте образ из GHCR:
+
+```bash
+docker pull ghcr.io/gsavelev/3xui-bot:latest
+```
+
+2. Клонируйте репозиторий:
+
+```bash
+git clone https://github.com/gsavelev/3xui-bot.git
+cd 3xui-bot
+```
+
+3. Подготовьте файл окружения и каталог для данных SQLite (сохраняется внутри контейнера в /app/data):
+
+```bash
+mkdir ./data
+cp ./src/.env.example ./.env
+# отредактируйте ./.env своими значениями
+```
+
+4. Запустите контейнер:
+
+```bash
+docker run -d --name 3xui-bot \
+  --restart unless-stopped \
+  --env-file ./.env \
+  -v "$(pwd)/data:/app/data" \
+  --label com.centurylinklabs.watchtower.enable=true \
+  ghcr.io/gsavelev/3xui-bot:latest
+```
+
+5. (Опционально) Автоматическое обновление через `Watchtower`
+
+Если запустить `watchtower`, он будет подтягивать обновлённый образ и перезапускать контейнер.
+Так как в примере уже добавлен label `com.centurylinklabs.watchtower.enable=true`, контейнер будет обновляться автоматически.
+Официальная документация: [https://containrrr.dev/watchtower/](https://containrrr.dev/watchtower/)
 
 ## Техническая архитектура
 
@@ -97,16 +139,14 @@ python3 src/app.py
 
 Проект использует `SQLite` с `SQLAlchemy ORM`. Основные таблицы:
 
-1. **`users`** - информация о пользователях:
-
-   - `telegram_id` - ID пользователя в Telegram
-   - `vless_profile_data` - данные VPN профиля в JSON
-   - `chat_member` - флаг членства в чате
-   - `is_admin` - флаг администратора
-1. **`static_profiles`** - статические VPN профили:
-
-   - `name` - имя профиля
-   - `vless_url` - VLESS ссылка
+1. `**users**` - информация о пользователях:
+  - `telegram_id` - ID пользователя в Telegram
+  - `vless_profile_data` - данные VPN профиля в JSON
+  - `chat_member` - флаг членства в чате
+  - `is_admin` - флаг администратора
+2. `**static_profiles**` - статические VPN профили:
+  - `name` - имя профиля
+  - `vless_url` - VLESS ссылка
 
 ### Основные компоненты
 
@@ -180,7 +220,7 @@ vless://{client_id}@{host}:{port}?type=tcp&security=reality&pbk={public_key}&fp=
 
 Бот автоматически каждый час проверяет пользователей и:
 
-- Удаляет профили пользователей, которые не состоят в чате / группе 
+- Удаляет профили пользователей, которые не состоят в чате / группе
 
 ## Безопасность
 
@@ -191,8 +231,8 @@ vless://{client_id}@{host}:{port}?type=tcp&security=reality&pbk={public_key}&fp=
 ## Возможные проблемы и решения
 
 1. **Ошибки подключения к 3X-UI** - проверьте URL и учетные данные
-3. **Ошибки базы данных** - проверьте права на запись в директории
-4. **Не работают уведомления** - проверьте настройки времени и часового пояса
+2. **Ошибки базы данных** - проверьте права на запись в директории
+3. **Не работают уведомления** - проверьте настройки времени и часового пояса
 
 ---
 
