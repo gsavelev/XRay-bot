@@ -24,8 +24,12 @@ async def check_users(bot: Bot):
             for user in users:
                 # Проверяем, является ли пользователь участником чата (группы)
                 user_chat_member = await check_if_user_chat_member(user.telegram_id, bot)
+                # Small delay to reduce API burst and flood risk
+                await asyncio.sleep(0.1)
 
-                if not user_chat_member and user.vless_profile_data:
+                # Delete profile only when we explicitly confirmed non-membership.
+                # None means temporary check failure and must not trigger deletion.
+                if user_chat_member is False and user.vless_profile_data:
                     try:
                         profile = json.loads(user.vless_profile_data)
                         # Удаляем из инбаунда

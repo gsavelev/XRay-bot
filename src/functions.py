@@ -3,9 +3,11 @@ import uuid
 import json
 import logging
 import random
+import asyncio
+from typing import Optional
 
 from aiogram import Bot
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 from aiogram.types import Chat
 
 from aiohttp.client_exceptions import ContentTypeError
@@ -493,7 +495,7 @@ def generate_vless_url(profile_data: dict) -> str:
         f"#{fragment}"
     )
 
-async def check_if_user_chat_member(user_id: int, bot: Bot) -> bool:
+async def check_if_user_chat_member(user_id: int, bot: Bot) -> Optional[bool]:
     """
     Check if user is a member of the configured chat.
     
@@ -502,26 +504,43 @@ async def check_if_user_chat_member(user_id: int, bot: Bot) -> bool:
         bot: Bot instance for API calls
         
     Returns:
-        bool: True if user is a member, False otherwise
+        Optional[bool]:
+            True if user is a member,
+            False if user is definitely not a member,
+            None if membership check failed temporarily (e.g., flood control).
     """
-    try:
-        # Get chat member information
-        chat_member = await bot.get_chat_member(
-            chat_id=config.CHAT_ID,
-            user_id=user_id
-        )
-        
-        # Check if user is a member (member, administrator, or creator)
-        return chat_member.status in ['member', 'administrator', 'creator']
-        
-    except TelegramBadRequest as e:
-        # Handle cases where user is not found or bot lacks permissions
-        logger.warning(f"Failed to check chat membership for user {user_id}: {e}")
-        return False
-    except Exception as e:
-        # Handle any other unexpected errors
-        logger.error(f"Unexpected error checking chat membership for user {user_id}: {e}")
-        return False
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            # Get chat member information
+            chat_member = await bot.get_chat_member(
+                chat_id=config.CHAT_ID,
+                user_id=user_id
+            )
+
+            # Check if user is a member (member, administrator, or creator)
+            return chat_member.status in ['member', 'administrator', 'creator']
+
+        except TelegramRetryAfter as e:
+            # Temporary flood limit: wait and retry
+            retry_after = int(getattr(e, "retry_after", 5))
+            logger.warning(
+                f"Flood control while checking membership for user {user_id}. "
+                f"Retrying in {retry_after}s (attempt {attempt}/{max_attempts})"
+            )
+            if attempt == max_attempts:
+                return None
+            await asyncio.sleep(retry_after + 1)
+        except TelegramBadRequest as e:
+            # User not found / bot permissions / invalid chat state
+            logger.warning(f"Failed to check chat membership for user {user_id}: {e}")
+            return False
+        except Exception as e:
+            # Temporary/unknown failure - don't treat as "not a member"
+            logger.error(f"Unexpected error checking chat membership for user {user_id}: {e}")
+            return None
+
+    return None
 
 async def get_chat_name(bot: Bot, chat_id: int | str) -> str:
     """
