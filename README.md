@@ -136,7 +136,7 @@ docker run -d --name 3xui-bot \
 
 Проект использует `SQLite` с `SQLAlchemy ORM`. Основные таблицы:
 
-1. `**users**` - информация о пользователях:
+1. **`users`** - информация о пользователях:
   - `telegram_id` - ID пользователя в Telegram
   - `full_name` - имя и фамилия в Telegram
   - `username` - имя пользователя в Telegram
@@ -145,7 +145,7 @@ docker run -d --name 3xui-bot \
   - `vless_profile_data` - данные VPN профиля в JSON
   - `chat_member` - флаг членства в чате
   - `is_admin` - флаг администратора
-2. `**static_profiles**` - статические VPN профили:
+2. **`static_profiles`** - статические VPN профили:
   - `name` - имя профиля
   - `vless_url` - VLESS ссылка
   - `created_at` - дата создания
