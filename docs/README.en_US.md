@@ -133,12 +133,17 @@ The project uses `SQLite` with `SQLAlchemy ORM`. Main tables:
 
 1. **`users`** - User information:
    - `telegram_id` - User's Telegram ID
+   - `full_name` - First and last name in Telegram
+   - `username` - Telegram username
+   - `registration_date` - Bot registration date
+   - `vless_profile_id` - VPN profile ID
    - `vless_profile_data` - VPN profile data in JSON
    - `chat_member` - Chat/group membership flag
    - `is_admin` - Administrator flag
 2. **`static_profiles`** - Static VPN profiles:
    - `name` - Profile name
    - `vless_url` - VLESS URL
+   - `created_at` - Creation date
 
 ### Core Components
 

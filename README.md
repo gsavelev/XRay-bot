@@ -138,12 +138,17 @@ docker run -d --name 3xui-bot \
 
 1. `**users**` - информация о пользователях:
   - `telegram_id` - ID пользователя в Telegram
+  - `full_name` - имя и фамилия в Telegram
+  - `username` - имя пользователя в Telegram
+  - `registration_date` - дата регистрации в боте
+  - `vless_profile_id` - ID VPN профиля
   - `vless_profile_data` - данные VPN профиля в JSON
   - `chat_member` - флаг членства в чате
   - `is_admin` - флаг администратора
 2. `**static_profiles**` - статические VPN профили:
   - `name` - имя профиля
   - `vless_url` - VLESS ссылка
+  - `created_at` - дата создания
 
 ### Основные компоненты
 
